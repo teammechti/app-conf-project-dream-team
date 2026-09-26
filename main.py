@@ -1,11 +1,19 @@
 from fastapi import FastAPI
 
+
 app = FastAPI(
     title="Project Name",
     description="Project description",
-    version="0.1.0"
+    version="0.2.0"
 )
 
+TEAM_NAME = "Dream Team"
+
+
+@app.get("/version")
+async def version():
+    """Версия приложения и команда-владелец."""
+    return {"version": app.version, "team": TEAM_NAME}
 
 @app.get("/")
 async def root():
