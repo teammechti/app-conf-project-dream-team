@@ -1,0 +1,5 @@
+{% macro icon(name, class='') -%}<svg class="icon {{ class }}" aria-hidden="true"><use href="#i-{{ name }}"/></svg>{%- endmacro %}
+<header class="public-header">
+  <span class="brand public-brand" aria-label="QueueManager">{{ icon('users') }}<span>QueueManager</span></span>
+  <div class="lang">{{ icon('globe') }} <span>RU</span></div>
+</header>

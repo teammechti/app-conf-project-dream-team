@@ -1,0 +1,45 @@
+{% extends "shared/base.html" %}
+{% from "shared/organizer_shell.html" import icon %}
+{% set nav = 'queues' %}
+{% block title %}Мои очереди — QueueManager{% endblock %}
+{% block body_class %}organizer-page{% endblock %}
+{% block content %}
+  {% include "shared/organizer_shell.html" %}
+  <main class="app-main dashboard-main">
+    <section class="page-heading heading-with-action">
+      <div class="heading-copy"><span class="heading-icon">{{ icon('layers') }}</span><div><h1>Мои очереди</h1><p>Создавайте и управляйте очередями для ваших мероприятий и активностей.</p></div></div>
+      <a class="button primary create-button" href="/queues/new">{{ icon('plus') }} Создать очередь</a>
+    </section>
+    <section class="metric-grid" aria-label="Общая статистика">
+      <article class="metric-card"><span class="metric-icon blue">{{ icon('layers') }}</span><div><strong>{{ dashboard.active_count }}</strong><span>Активные очереди</span></div></article>
+      <article class="metric-card"><span class="metric-icon green">{{ icon('users') }}</span><div><strong>{{ dashboard.today_total }}</strong><span>Всего участников сегодня</span></div></article>
+      <article class="metric-card"><span class="metric-icon amber">{{ icon('clock') }}</span><div><strong>{{ (dashboard.average_wait_seconds / 60)|round|int if dashboard.average_wait_seconds else '—' }}{% if dashboard.average_wait_seconds %} мин{% endif %}</strong><span>Среднее время ожидания</span></div></article>
+    </section>
+    <section class="queue-toolbar">
+      <div class="filters" role="group" aria-label="Фильтр очередей">
+        <button class="filter active" type="button" data-filter="all">Все <b>{{ dashboard.cards|length }}</b></button>
+        <button class="filter" type="button" data-filter="active"><i class="dot green"></i> Активные <b>{{ dashboard.active_count }}</b></button>
+        <button class="filter" type="button" data-filter="paused"><i class="dot amber"></i> Пауза <b>{{ dashboard.paused_count }}</b></button>
+        <button class="filter" type="button" data-filter="finished"><i class="dot slate"></i> Завершённые <b>{{ dashboard.finished_count }}</b></button>
+      </div>
+      <label class="search-control desktop-only">{{ icon('list') }}<input id="queue-search" type="search" placeholder="Поиск по названию очереди…"></label>
+    </section>
+    <section class="queue-list" id="queue-list">
+      {% for card in dashboard.cards %}
+      {% set q = card.queue %}{% set s = card.state %}
+      <article class="queue-card" data-status="{{ q.status.value }}" data-name="{{ q.name|lower }}">
+        <div class="queue-card-main"><span class="queue-avatar">{{ icon('cap') }}</span><div><div class="queue-title-row"><h2>{{ q.name }}</h2><span class="status-badge {{ q.status.value }}"><i></i>{{ {'active':'Активна','paused':'Пауза','finished':'Завершена','draft':'Черновик'}[q.status.value] }}</span></div><p>{{ q.location or 'Место не указано' }} <b>•</b> {{ q|queue_schedule }}</p><small>{{ q.description }}</small></div></div>
+        <div class="queue-stats"><div>{{ icon('users') }}<strong>{{ s.counts.waiting + s.counts.called }}</strong><span>В очереди</span></div><div class="success-text">{{ icon('check') }}<strong>{{ s.counts.completed }}</strong><span>Обслужено</span></div><div class="warning-text">{{ icon('clock') }}<strong>{{ (s.average_wait_seconds / 60)|round|int if s.average_wait_seconds else '—' }}{% if s.average_wait_seconds %} мин{% endif %}</strong><span>Среднее ожидание</span></div></div>
+        <div class="queue-actions"><a class="button primary" href="/manage/{{ q.management_token }}">{{ icon('arrow') }} Открыть</a><button class="button secondary copy-button" type="button" data-copy="{{ app_url }}/q/{{ q.public_code }}">{{ icon('link') }} Копировать ссылку</button></div>
+        <details class="action-menu queue-card-menu"><summary class="icon-button dots-button" aria-label="Действия">{{ icon('dots') }}</summary><div class="action-menu-popover"><a href="/manage/{{ q.management_token }}">{{ icon('arrow') }} Управлять</a><a href="{{ app_url }}/q/{{ q.public_code }}" target="_blank" rel="noopener">{{ icon('globe') }} Страница участника</a><button type="button" data-copy="{{ app_url }}/q/{{ q.public_code }}">{{ icon('copy') }} Копировать ссылку</button><button class="danger-text" type="button" data-delete-queue="{{ q.id }}" data-queue-name="{{ q.name }}">{{ icon('x') }} Удалить очередь</button></div></details>
+      </article>
+      {% else %}
+      <article class="empty-state"><span class="heading-icon">{{ icon('layers') }}</span><h2>Очередей пока нет</h2><p>Создайте первую очередь — это займёт меньше минуты.</p><a class="button primary" href="/queues/new">{{ icon('plus') }} Создать очередь</a></article>
+      {% endfor %}
+      <div class="empty-state" id="no-results" hidden><h2>Ничего не найдено</h2><p>Попробуйте изменить запрос или фильтр.</p></div>
+    </section>
+    <a class="fab mobile-only" href="/queues/new" aria-label="Создать очередь">{{ icon('plus') }}</a>
+  </main>
+  <dialog class="modal confirm-modal" id="delete-queue-modal"><div class="modal-icon danger">{{ icon('x') }}</div><h2>Удалить очередь?</h2><p>Очередь <b id="delete-queue-name"></b>, её участники, история действий и статистика будут удалены без возможности восстановления.</p><div class="modal-actions"><button class="button secondary" value="cancel" type="button">Отмена</button><button class="button danger" id="confirm-queue-delete" type="button">Удалить</button></div></dialog>
+{% endblock %}
+{% block scripts %}<script type="module" src="{{ url_for('static', path='js/dashboard.js') }}?v={{ version }}"></script>{% endblock %}

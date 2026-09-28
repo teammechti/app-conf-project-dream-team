@@ -1,0 +1,22 @@
+{% extends "shared/base.html" %}
+{% from "shared/organizer_shell.html" import icon %}
+{% set nav = 'queues' %}
+{% set public_url = app_url ~ '/q/' ~ queue.public_code %}
+{% set management_url = app_url ~ '/manage/' ~ queue.management_token %}
+{% block title %}Очередь создана — QueueManager{% endblock %}
+{% block body_class %}organizer-page{% endblock %}
+{% block content %}
+  {% include "shared/organizer_shell.html" %}
+  <main class="app-main created-main">
+    <section class="success-heading"><span>{{ icon('check') }}</span><h1>Очередь создана</h1><p>Очередь «{{ queue.name }}» успешно создана и готова к использованию.</p></section>
+    <div class="created-layout">
+      <div class="created-content">
+        <section class="info-card link-card"><div class="card-heading"><span class="metric-icon blue">{{ icon('link') }}</span><div><h2>Публичная ссылка для участников</h2><p>Поделитесь этой ссылкой, чтобы участники могли записаться.</p></div></div><div class="link-with-qr"><div class="link-actions"><div class="copy-field">{{ icon('link') }}<span>{{ public_url }}</span></div><button class="button primary copy-button" data-copy="{{ public_url }}">{{ icon('copy') }} Скопировать ссылку</button><div class="small-actions"><button class="button secondary" data-show-qr type="button">Показать QR</button><a class="button secondary" href="{{ public_url }}" target="_blank">Открыть страницу очереди</a></div></div><figure class="qr-figure"><img src="{{ request.url_for('queue_qr', code=queue.public_code) }}" alt="QR-код публичной очереди"><figcaption>QR-код для участников</figcaption></figure></div></section>
+        <section class="info-card"><div class="card-heading"><span class="metric-icon amber">🔒</span><div><h2>Ссылка для управления</h2><p>Не передавайте её участникам.</p></div></div><div class="inline-copy"><div class="copy-field">{{ icon('link') }}<span>{{ management_url }}</span></div><button class="button secondary copy-button" data-copy="{{ management_url }}">{{ icon('copy') }} Скопировать</button></div></section>
+        <section class="info-card queue-summary"><div class="card-heading"><span class="metric-icon blue">{{ icon('cap') }}</span><h2>Информация об очереди</h2></div><div class="summary-grid"><div><small>Название</small><b>{{ queue.name }}</b></div><div><small>Дата и время</small><b>{{ queue|queue_schedule }}</b></div><div><small>Место проведения</small><b>{{ queue.location or 'Не указано' }}</b></div><div><small>Макс. участников</small><b>{{ queue.max_participants }}</b></div></div></section>
+      </div>
+      <aside class="next-card"><h2>🚀 Что дальше?</h2><ol><li><b>Отправьте ссылку участникам</b><span>Поделитесь публичной ссылкой или QR-кодом.</span></li><li><b>Откройте панель управления</b><span>Следите за списком и вызывайте участников.</span></li><li><b>Начните вызов участников</b><span>Все экраны обновятся в реальном времени.</span></li></ol><a class="button primary" href="{{ management_url }}">{{ icon('arrow') }} Перейти к панели управления</a></aside>
+    </div>
+  </main>
+  <dialog class="modal qr-modal" id="qr-modal"><button class="icon-button modal-close" type="button" aria-label="Закрыть">{{ icon('x') }}</button><h2>QR-код очереди</h2><img src="{{ request.url_for('queue_qr', code=queue.public_code) }}" alt="QR-код"><p>Отсканируйте камерой телефона</p></dialog>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "shared/base.html" %}
+{% from "shared/organizer_shell.html" import icon %}
+{% set nav = 'queues' %}
+{% block title %}Очередь завершена — QueueManager{% endblock %}
+{% block body_class %}organizer-page{% endblock %}
+{% block content %}
+  {% include "shared/organizer_shell.html" %}
+  <main class="app-main finished-main">
+    <section class="queue-page-heading"><span class="heading-icon">{{ icon('cap') }}</span><div><h1>Очередь завершена <span class="status-badge finished"><i></i>Завершена</span></h1><p><b>{{ queue.name }}</b><br>{{ queue.location or 'Место не указано' }} · {{ queue|queue_schedule }}</p></div><div class="heading-actions"><a class="button primary" href="/queues/new">{{ icon('plus') }} Создать новую очередь</a><a class="button secondary" href="/organizer">Вернуться к очередям</a></div></section>
+
+    <section class="finish-metrics">
+      <article><span class="metric-icon blue">{{ icon('users') }}</span><div><small>Всего участников</small><strong>{{ state.all_participants|length }}</strong></div></article>
+      <article><span class="metric-icon green">{{ icon('check') }}</span><div><small>Обслуживание завершено</small><strong>{{ state.counts.completed }}</strong></div></article>
+      <article><span class="metric-icon amber">{{ icon('skip') }}</span><div><small>Пропущено</small><strong>{{ state.counts.skipped }}</strong></div></article>
+      <article><span class="metric-icon red">{{ icon('x') }}</span><div><small>Вышли из очереди</small><strong>{{ state.counts.cancelled }}</strong></div></article>
+      <article><span class="metric-icon blue">{{ icon('clock') }}</span><div><small>Среднее ожидание</small><strong>{{ (state.average_wait_seconds / 60)|round|int if state.average_wait_seconds else '—' }}{% if state.average_wait_seconds %} мин{% endif %}</strong></div></article>
+    </section>
+
+    <div class="finish-layout">
+      <div>
+        <section class="info-card finished-participants">
+          <div class="section-heading"><h2>{{ icon('users') }} Участники очереди</h2><b>{{ state.all_participants|length }}</b></div>
+          <div class="result-table finished-result-table">
+            {% for p in state.all_participants %}
+            <div><b>{{ p.number }}</b><span>{{ p.name }}</span><span class="status-badge {{ p.status }}">{{ {'completed':'Обслуживание завершено','skipped':'Пропущен','cancelled':'Вышел из очереди','waiting':'Не дождался','called':'Был вызван'}[p.status] }}</span></div>
+            {% else %}<p class="empty-inline">В этой очереди не было участников</p>{% endfor %}
+          </div>
+        </section>
+
+        <section class="info-card finished-events">
+          <div class="section-heading"><h2>{{ icon('list') }} История действий</h2><span>Сохраняется после завершения</span></div>
+          <div class="finished-event-list">
+            {% for event in state.recent_events %}
+            <article class="event-row kind-{{ event.kind }}"><span>{{ icon('users' if event.kind == 'joined' else 'radio' if event.kind == 'called' else 'arrow' if event.kind in ['acknowledged','resumed','restored'] else 'check' if event.kind == 'completed' else 'skip' if event.kind == 'skipped' else 'pause' if event.kind == 'paused' else 'stop' if event.kind == 'finished' else 'info') }}</span><div><b>{{ event.message }}</b><time>{{ event.created_at[8:10] }}.{{ event.created_at[5:7] }} · {{ event.created_at[11:16] }}</time></div></article>
+            {% else %}<p class="empty-inline">Действий пока нет</p>{% endfor %}
+          </div>
+        </section>
+      </div>
+
+      <aside>
+        <section class="info-card public-access"><h2>{{ icon('link') }} Публичный доступ</h2><div class="finished-note">Очередь больше не принимает новых участников</div><div class="copy-field"><span>{{ app_url }}/q/{{ queue.public_code }}</span><button class="copy-button" data-copy="{{ app_url }}/q/{{ queue.public_code }}">{{ icon('copy') }}</button></div></section>
+        <section class="info-card queue-facts"><h2>{{ icon('info') }} Информация об очереди</h2><dl><div><dt>Статус</dt><dd>Завершена</dd></div><div><dt>Дата и время</dt><dd>{{ queue|queue_schedule }}</dd></div><div><dt>Место</dt><dd>{{ queue.location or 'Не указано' }}</dd></div><div><dt>Участников</dt><dd>{{ state.all_participants|length }}</dd></div><div><dt>Пропущено</dt><dd>{{ state.counts.skipped }}</dd></div></dl></section>
+      </aside>
+    </div>
+  </main>
+{% endblock %}

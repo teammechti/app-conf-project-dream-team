@@ -51,4 +51,6 @@ Thumbs.db
 # Testing
 .pytest_cache/
 .coverage
-htmlcov/
+htmlcov/.venv/
+.env.production
+postgres-data/
