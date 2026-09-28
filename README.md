@@ -1,101 +1,111 @@
 # QueueManager
 
-Инструкция для сервера с доменом и HTTPS: [DEPLOYMENT.md](DEPLOYMENT.md).
+QueueManager — веб-приложение для управления электронной очередью. Организатор создаёт очередь и управляет вызовами, а участники присоединяются по ссылке или QR-коду без регистрации.
 
-Пошаговая инструкция для установки на чистую Ubuntu: [SERVER_SETUP_RU.md](SERVER_SETUP_RU.md).
+Версия: `0.5.1`.
 
-Рабочее веб-приложение для электронной очереди: организатор создаёт очередь и управляет вызовами, участники присоединяются без регистрации и получают обновления в реальном времени.
+## Состояние проекта
 
-## Команда
+Приложение полностью работает локально в Docker:
 
-- Иван — Team Lead / Backend Developer;
-- Олег — Tech Lead;
-- Егор — DevOps;
-- Алексей — Backend Developer.
+- PostgreSQL сохраняет аккаунты, очереди, шаблоны и историю;
+- интерфейсы организатора и участника обновляются через WebSocket;
+- QR-код создаётся отдельно для каждой очереди;
+- AI-помощник заполняет форму через Qwen3 8B в Ollama;
+- основной функционал не зависит от доступности AI;
+- автоматические тесты: 32 passed.
 
-## Стек технологий
+Production-контур подготовлен для адреса `https://queuemanager.duckdns.org`. В него входят Docker Compose, PostgreSQL, QueueManager, Ollama, автоматическая загрузка Qwen и Caddy с HTTPS. После привязки DuckDNS и запуска на сервере доступность проверяется через `/health`.
 
-- Python 3.12, FastAPI, Pydantic;
-- SQLAlchemy 2, Alembic, PostgreSQL 16;
-- Jinja2, HTML5, CSS3, JavaScript;
-- WebSocket;
-- Ollama и Qwen3 8B;
-- Docker, Docker Compose, Caddy и HTTPS;
-- pytest и GitHub Actions.
+Инструкции:
+
+- [развёртывание](DEPLOYMENT.md);
+- [установка на чистую Ubuntu](SERVER_SETUP_RU.md).
 
 ## Возможности
 
-- создание очереди с live preview и серверной валидацией;
-- публичная ссылка и настоящий QR-код;
-- сохранение состояния в PostgreSQL через SQLAlchemy 2;
-- последовательные номера `A-001`, `A-002`, …;
-- атомарные действия `Следующий`, `Вызвать`, `Пропустить`, `Вернуть`, `Пауза`, `Завершить`;
-- восстановление участника после обновления страницы по локальному token;
-- WebSocket-обновления с переподключением и полной синхронизацией состояния;
-- desktop- и mobile-компоновки, custom toast/modal, анимация вызова;
-- необязательный Qwen-помощник, который извлекает черновик полей из обычного русского описания;
-- Alembic-миграции, Docker Compose и pytest.
+- регистрация и вход организатора;
+- создание, приостановка, возобновление и завершение очереди;
+- вызов, пропуск и возврат участников;
+- индивидуальные публичные ссылки и QR-коды;
+- уведомления и журнал событий;
+- список участников и история завершённой очереди;
+- шаблоны очередей;
+- статистика по дням, неделям и месяцам;
+- настройки организатора и смена пароля;
+- адаптивный интерфейс для компьютеров и телефонов;
+- AI-заполнение формы очереди по русскоязычному описанию.
 
-## Запуск через Docker
+## Стек
 
-Требуется Docker Desktop с Compose.
+- Python 3.12;
+- FastAPI и Pydantic;
+- SQLAlchemy 2 и Alembic;
+- PostgreSQL 16;
+- Jinja2, HTML, CSS и JavaScript;
+- WebSocket;
+- Ollama и Qwen3 8B;
+- Docker и Docker Compose;
+- Caddy и HTTPS;
+- pytest и GitHub Actions.
+
+## Локальный запуск
+
+Требуются Docker Desktop и Ollama с моделью `qwen3:8b`.
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
-Откройте `http://localhost:8000`. При первом запуске применятся миграции и будет создана пустая рабочая база. Организатор регистрируется через главную страницу и создаёт свои очереди.
+Приложение будет доступно по адресу `http://localhost:8000`.
 
-Остановка:
+Проверка:
+
+```bash
+curl http://localhost:8000/health
+```
+
+Остановка без удаления данных:
 
 ```bash
 docker compose down
 ```
 
-Данные PostgreSQL остаются в named volume `postgres-data`. Для полного удаления данных используйте `docker compose down -v` только если они больше не нужны.
+## AI-помощник
 
-## Qwen AI-помощник
+AI используется только для преобразования описания организатора в черновик формы. Модель не создаёт очередь и не участвует в расчёте позиций, вызове участников или проверке лимитов.
 
-Основная очередь не зависит от LLM. Без ключа всё приложение, формы и deterministic-логика продолжают работать; в AI-модальном окне отображается понятный статус недоступности.
+Сценарий:
 
-Для включения помощника задайте backend-переменные окружения:
+1. Организатор вводит описание.
+2. Backend отправляет его в Qwen.
+3. Ответ проверяется Pydantic-схемой.
+4. Пользователь просматривает найденные значения.
+5. После подтверждения значения переносятся в форму.
+6. Очередь создаётся обычной серверной логикой.
 
-```env
-LLM_API_KEY=ваш_ключ_Model_Studio
-QWEN_BASE_URL=https://WORKSPACE_ID.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-QWEN_MODEL=qwen3.7-plus
+Ключи провайдера не передаются во frontend. В production Ollama и Qwen работают внутри серверного Docker Compose.
+
+## API
+
+- `GET /` — главная HTML-страница;
+- `GET /health` — проверка состояния;
+- `GET /version` — версия приложения и команда;
+- `/api/*` — JSON API;
+- `/ws/queues/{public_code}` — WebSocket очереди;
+- `GET /docs` — OpenAPI.
+
+Ответ `GET /health`:
+
+```json
+{"status": "ok"}
 ```
 
-Вместо `LLM_API_KEY` также поддерживается стандартное имя Alibaba Cloud `DASHSCOPE_API_KEY`.
+Ответ `GET /version`:
 
-Base URL зависит от региона и workspace Alibaba Cloud Model Studio. Ключ никогда не отправляется в браузер. Backend вызывает OpenAI-compatible Chat Completions Qwen со строгим JSON Schema, затем повторно валидирует ответ через `AIQueueDraft`. AI только предлагает черновик; очередь создаётся исключительно обычной кнопкой после проверки организатором.
-
-## Локальный запуск с PostgreSQL
-
-1. Создайте Python 3.12 virtual environment и установите зависимости:
-
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
+```json
+{"version": "0.5.1", "team": "Dream Team"}
 ```
-
-2. Скопируйте `.env.example` в `.env` и укажите доступный `DATABASE_URL`.
-3. Примените миграцию, добавьте demo seed и запустите сервер:
-
-```bash
-alembic upgrade head
-python -m app.seed_demo
-uvicorn app.main:app --reload
-```
-
-## API совместимости
-
-- `GET /` — главная HTML-страница с выбором роли;
-- `GET /health` — `200 {"status":"ok"}`;
-- `GET /version` — `{"version":"0.5.1","team":"Dream Team"}`.
-
-Основные JSON-маршруты находятся под `/api`, WebSocket: `/ws/queues/{public_code}`. Интерактивная схема доступна на `/docs`.
 
 ## Тесты
 
@@ -103,14 +113,11 @@ uvicorn app.main:app --reload
 pytest -q
 ```
 
-Тесты используют отдельную временную SQLite-базу как изолированный тестовый адаптер. Основной runtime и Docker работают только с PostgreSQL.
+Тесты используют отдельную SQLite-базу. Рабочее приложение использует PostgreSQL.
 
-## Структура
+## Команда
 
-- `app/models` — SQLAlchemy-модели;
-- `app/services` — транзакционная бизнес-логика;
-- `app/api` — JSON API;
-- `app/websocket` — диспетчер realtime-соединений;
-- `app/templates`, `app/static` — Jinja UI, CSS и ES modules;
-- `alembic` — миграции;
-- `tests` — функциональные API-тесты;
+- Иван — Team Lead / Backend Developer;
+- Олег — Tech Lead;
+- Егор — DevOps;
+- Алексей — Backend Developer.
