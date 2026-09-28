@@ -1,0 +1,49 @@
+{% extends "shared/base.html" %}
+{% from "shared/organizer_shell.html" import icon %}
+{% block title %}QueueManager — электронная очередь{% endblock %}
+{% block body_class %}landing-page{% if authenticated %} authenticated{% endif %}{% endblock %}
+{% block content %}
+  <header class="landing-header">
+    <span class="brand">{{ icon('users') }}<span>QueueManager</span></span>
+    {% if authenticated %}<a class="button secondary landing-cabinet" href="/organizer">В кабинет</a>{% else %}<span class="landing-status"><i></i> Сервис работает</span>{% endif %}
+  </header>
+  <main class="landing-main">
+    <section class="landing-hero">
+      <span class="landing-kicker">Электронная очередь без лишнего ожидания</span>
+      <h1>Как вы хотите использовать QueueManager?</h1>
+      <p>Организатор создаёт и управляет очередями. Участнику достаточно ссылки, кода или QR-кода.</p>
+    </section>
+    <section class="role-grid" aria-label="Выбор роли">
+      <button class="role-card organizer-role" id="organizer-role" type="button">
+        <span class="role-icon">{{ icon('layers') }}</span><span><small>Для организаторов</small><strong>{{ 'Открыть кабинет' if authenticated else 'Создать очередь' }}</strong><p>Настройте очередь, пригласите участников и управляйте вызовами в реальном времени.</p><b>{{ 'Перейти в кабинет' if authenticated else 'Войти или зарегистрироваться' }} {{ icon('arrow') }}</b></span>
+      </button>
+      <button class="role-card participant-role" id="participant-role" type="button">
+        <span class="role-icon">{{ icon('users') }}</span><span><small>Для участников</small><strong>Присоединиться</strong><p>Вставьте полученную ссылку или код очереди и следите за своей позицией.</p><b>Найти очередь {{ icon('arrow') }}</b></span>
+      </button>
+    </section>
+    <div class="landing-features"><span>{{ icon('radio') }} Обновления в реальном времени</span><span>{{ icon('link') }} Вход по ссылке или QR</span><span>{{ icon('bell') }} Уведомления организатору</span></div>
+  </main>
+  <footer class="landing-footer"><span>© 2026 QueueManager</span><nav><a href="/privacy">Политика конфиденциальности</a><a href="/terms">Пользовательское соглашение</a></nav></footer>
+
+  <dialog class="modal onboarding-modal auth-modal" id="organizer-modal">
+    <button class="modal-close icon-button" type="button" aria-label="Закрыть">{{ icon('x') }}</button>
+    <span class="onboarding-icon">{{ icon('layers') }}</span><h2>Кабинет организатора</h2><p>Войдите, чтобы открыть свои очереди и шаблоны, или создайте новый аккаунт.</p>
+    <div class="auth-tabs" role="tablist"><button class="active" type="button" data-auth-tab="login">Войти</button><button type="button" data-auth-tab="register">Регистрация</button></div>
+    <form id="organizer-login-form" data-auth-panel="login">
+      <label for="login-email">Электронная почта</label><input id="login-email" name="email" type="email" maxlength="320" autocomplete="email" placeholder="name@example.com" required>
+      <label for="login-password">Пароль</label><input id="login-password" name="password" type="password" maxlength="128" autocomplete="current-password" placeholder="Введите пароль" required>
+      <small class="field-error"></small><button class="button primary" type="submit">Войти в кабинет {{ icon('arrow') }}</button>
+    </form>
+    <form id="organizer-register-form" data-auth-panel="register" hidden>
+      <label for="register-name">Ваше имя</label><input id="register-name" name="name" maxlength="100" autocomplete="name" placeholder="Например, Алексей Смирнов" required>
+      <label for="register-email">Электронная почта</label><input id="register-email" name="email" type="email" maxlength="320" autocomplete="email" placeholder="name@example.com" required>
+      <label for="register-password">Пароль</label><input id="register-password" name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Минимум 8 символов, буква и цифра" required>
+      <label for="register-password-confirm">Повторите пароль</label><input id="register-password-confirm" name="password_confirm" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
+      <label class="legal-check"><input name="accept_terms" type="checkbox" required><span>Я принимаю <a href="/terms" target="_blank">пользовательское соглашение</a> и <a href="/privacy" target="_blank">политику конфиденциальности</a></span></label>
+      <small class="field-error"></small><button class="button primary" type="submit">Создать аккаунт {{ icon('arrow') }}</button>
+    </form>
+  </dialog>
+
+  <dialog class="modal onboarding-modal" id="participant-modal"><button class="modal-close icon-button" type="button" aria-label="Закрыть">{{ icon('x') }}</button><span class="onboarding-icon green">{{ icon('users') }}</span><h2>Найдите свою очередь</h2><p>Вставьте публичную ссылку, которую прислал организатор, или короткий код.</p><form id="participant-entry-form"><label for="queue-link">Ссылка или код очереди</label><input id="queue-link" name="queue" autocomplete="url" placeholder="https://…/q/abc123 или abc123" required><small class="field-error"></small><button class="button primary" type="submit">Перейти в очередь {{ icon('arrow') }}</button></form></dialog>
+{% endblock %}
+{% block scripts %}<script type="module" src="{{ url_for('static', path='js/landing.js') }}?v={{ version }}"></script>{% endblock %}

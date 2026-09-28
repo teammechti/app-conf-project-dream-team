@@ -1,0 +1,112 @@
+name: queuemanager-production
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-queuemanager}
+      POSTGRES_USER: ${POSTGRES_USER:-queuemanager}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-queuemanager} -d ${POSTGRES_DB:-queuemanager}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - backend
+      - ai-egress
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  ollama-model:
+    image: ollama/ollama:latest
+    restart: "no"
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    command: ["pull", "${OLLAMA_MODEL:-qwen3:8b}"]
+    networks:
+      - backend
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+    restart: unless-stopped
+    command: >-
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
+      --proxy-headers --forwarded-allow-ips='*'"
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-queuemanager}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-queuemanager}
+      APP_URL: https://${DOMAIN:?Set DOMAIN in .env.production}
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env.production}
+      SECURE_COOKIES: "true"
+      SESSION_MAX_AGE_SECONDS: ${SESSION_MAX_AGE_SECONDS:-2592000}
+      LEGAL_OPERATOR_NAME: ${LEGAL_OPERATOR_NAME:-Администрация QueueManager}
+      LEGAL_CONTACT_EMAIL: ${LEGAL_CONTACT_EMAIL:-privacy@example.com}
+      AUTO_CREATE_TABLES: "false"
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      QWEN_BASE_URL: ${QWEN_BASE_URL:-}
+      QWEN_MODEL: ${QWEN_MODEL:-qwen3.7-plus}
+      QWEN_TIMEOUT_SECONDS: ${QWEN_TIMEOUT_SECONDS:-60}
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:8b}
+    expose:
+      - "8000"
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env.production}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - frontend
+    depends_on:
+      web:
+        condition: service_healthy
+
+networks:
+  frontend:
+  ai-egress:
+  backend:
+    internal: true
+
+volumes:
+  postgres-data:
+  ollama-data:
+  caddy-data:
+  caddy-config:

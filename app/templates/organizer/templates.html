@@ -1,0 +1,26 @@
+{% extends "shared/base.html" %}
+{% from "shared/organizer_shell.html" import icon %}
+{% set nav = 'templates' %}
+{% block title %}Шаблоны — QueueManager{% endblock %}
+{% block body_class %}organizer-page{% endblock %}
+{% block content %}
+  {% include "shared/organizer_shell.html" %}
+  <main class="app-main templates-main">
+    <section class="page-heading heading-with-action"><div class="heading-copy"><span class="heading-icon">{{ icon('file') }}</span><div><h1>Шаблоны</h1><p>Сохраняйте параметры очередей и запускайте новые за несколько шагов.</p></div></div><a class="button primary" href="/templates/new">{{ icon('plus') }} Создать шаблон</a></section>
+    <section class="template-toolbar"><label class="search-control template-search">{{ icon('list') }}<input id="template-search" type="search" placeholder="Поиск шаблонов…"></label><span><b>{{ queue_templates|length }}</b> {{ 'шаблон' if queue_templates|length == 1 else 'шаблонов' }}</span></section>
+    <section class="template-grid" id="template-list">
+      {% for item in queue_templates %}
+      <article class="template-card" data-name="{{ (item.name ~ ' ' ~ item.description)|lower }}" data-id="{{ item.id }}">
+        <div class="template-card-head"><span class="queue-avatar">{{ icon('file') }}</span><div><h2>{{ item.name }}</h2><p>{{ item.description or 'Описание не добавлено' }}</p></div><details class="action-menu"><summary class="icon-button" aria-label="Действия">{{ icon('dots') }}</summary><div class="action-menu-popover"><a href="/templates/{{ item.id }}/edit">{{ icon('edit') }} Редактировать</a><button type="button" data-template-duplicate="{{ item.id }}">{{ icon('copy') }} Дублировать</button><button class="danger-text" type="button" data-template-delete="{{ item.id }}">{{ icon('stop') }} Удалить</button></div></details></div>
+        <div class="template-facts"><span>{{ icon('pin') }}<b>{{ item.location or 'Место задаётся при запуске' }}</b><small>Место</small></span><span>{{ icon('clock') }}<b>{% if item.default_start_time %}{{ item.default_start_time.strftime('%H:%M') }} – {{ item.default_end_time.strftime('%H:%M') }}{% else %}Указать время{% endif %}</b><small>Можно изменить</small></span><span>{{ icon('users') }}<b>{{ item.max_participants }}</b><small>Макс. участников</small></span></div>
+        <div class="template-card-foot"><span>{{ icon('chart') }} {{ item.usage_count }} использований</span><a class="button primary" href="/queues/new?template={{ item.id }}">{{ icon('arrow') }} Использовать</a></div>
+      </article>
+      {% else %}
+      <article class="empty-state template-empty"><span class="heading-icon">{{ icon('file') }}</span><h2>Шаблонов пока нет</h2><p>Создайте шаблон, чтобы не вводить одинаковые параметры очереди заново.</p><a class="button primary" href="/templates/new">{{ icon('plus') }} Создать шаблон</a></article>
+      {% endfor %}
+      <div class="empty-state template-empty" id="template-no-results" hidden><h2>Шаблоны не найдены</h2><p>Измените поисковый запрос.</p></div>
+    </section>
+  </main>
+  <dialog class="modal confirm-modal" id="delete-template-modal"><div class="modal-icon danger">{{ icon('stop') }}</div><h2>Удалить шаблон?</h2><p>Очереди, созданные ранее, останутся доступны.</p><div class="modal-actions"><button class="button secondary" value="cancel">Отмена</button><button class="button danger" id="confirm-template-delete">Удалить</button></div></dialog>
+{% endblock %}
+{% block scripts %}<script type="module" src="{{ url_for('static', path='js/templates.js') }}?v={{ version }}"></script>{% endblock %}

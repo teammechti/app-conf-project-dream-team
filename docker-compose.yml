@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: queuemanager
+      POSTGRES_USER: queuemanager
+      POSTGRES_PASSWORD: queuemanager
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U queuemanager -d queuemanager"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  web:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://queuemanager:queuemanager@postgres:5432/queuemanager
+      APP_URL: http://localhost:8000
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      QWEN_BASE_URL: ${QWEN_BASE_URL:-}
+      QWEN_MODEL: ${QWEN_MODEL:-qwen3.7-plus}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:8b}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+volumes:
+  postgres-data:
