@@ -109,16 +109,20 @@
 ### Схема ветвления
 
 ```text
-                            hotfix/*
-                           /        \
-main        ●─────────────●──────────●────────────●
-              \                       ↑
-               \                     /
-develop       ●──────●──────●───────●────────────●
-               \      \      \
-                \      \      \
-feature/*        ●──●   ●──●   \
-                              release/*
+main        ●─────────────────●─────────────────●
+             \               /                 / 
+              \             /                 / 
+hotfix         ●─────●─────●                 /
+                                            /
+release/*                           ●──────●
+                                   /        \ 
+                                  /          \ 
+develop       ●──────●───────────●────────────●
+               \      \         /
+                \      \       /
+feature/*        \      ●──●──●
+                  \
+feature/*          ●────────●
 ```
 
 Основной поток новой функциональности:
@@ -161,7 +165,7 @@ main → hotfix/* → main
 2. `develop` является интеграционной веткой текущей разработки
 3. Новая функциональность создаётся в `feature/<название>` от актуальной `develop`
 4. Исправления в процессе разработки выполняются в `bugfix/<название>`
-5. Подготовка релиза при необходимости выполняется в `release/<версия>`
+5. Подготовка релиза выполняется в `release/<версия>`
 6. Срочное исправление стабильной версии выполняется в `hotfix/<название>`
 7. Изменения в `main` и `develop` выполняются только через Pull Request
 8. Для merge требуется минимум 1 approval от другого участника команды
@@ -268,15 +272,16 @@ GitFlow хорошо соответствует этой схеме: измен�
 
 ## Источники
 
-- Martin Fowler: Branching Patterns
-- Pro Git: Ветвление в Git
-- GitHub Documentation: About pull request reviews
-- GitHub Documentation: About rulesets
-- Definition of Done курса
-- Материалы практики №2
+- [Martin Fowler: Branching Patterns](https://martinfowler.com/articles/branching-patterns.html)
+- [Pro Git: Ветвление в Git](https://git-scm.com/book/ru/v2/Ветвление-в-Git-О-ветвлении-в-двух-словах)
+- [GitHub Documentation: About pull request reviews](https://docs.github.com/en/pull-requests/reference/pull-request-reviews)
+- [GitHub Documentation: About rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets)
+- [Definition of Done курса](https://github.com/andrey-limasov/app-conf/blob/main/definition-of-done.md)
+- [Материалы практики №2](https://github.com/andrey-limasov/app-conf/blob/main/practices/practice2/practice-2-guide.md)
 
 ## История изменений
 
 | Дата | Статус | Изменения | Автор |
 |---|---|---|---|
 | 2026-09-26 | Предложено | Первоначальная версия ADR 001 | Иван |
+| 2026-09-27 | Принято | Исправленная версия ADR 001 | Егор |
