@@ -254,6 +254,7 @@ remote: - Changes must be made through a pull request.
 - Restrict deletions;
 - Block force pushes;
 - Require a pull request before merging;
+- Require conversation resolution before merging;
 - Required approvals: 1.
 
 Запрет удаления ветки проверен командой:
