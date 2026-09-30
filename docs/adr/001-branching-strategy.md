@@ -13,7 +13,7 @@
 - Иван — Team Lead / Backend Developer
 - Олег — Tech Lead
 - Егор — DevOps попс
-- Алексей — Backend Developer
+- Алексей/олег — Backend Developer
 
 ## Контекст
 
