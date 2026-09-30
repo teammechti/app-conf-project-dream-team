@@ -7,7 +7,8 @@
 - [Иван] — [роль, Backend Developer]
 - [Егор] — [роль, DevOps]
 - [Олег] — [роль, Tech Lead]
-- [Асейлек] — [роль, Backend Developer]
+- [Алексей] — [роль, Backend Developer]
+- [Евгений] — [роль, DevOps]
 
 ## Стек технологий
 
